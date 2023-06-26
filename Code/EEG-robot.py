@@ -1,24 +1,24 @@
 import tensorflow as tf
 import pylsl
 import numpy as np
-from pylsl import StreamInlet, resolve_stream # first resolve an EEG # stream on the lab network
+from pylsl import StreamInlet, resolve_stream                   # first resolve an EEG # stream on the lab network
 from nltk import flatten
 from spectral_analysis import dsp
 
-import socket     # Wifi Xbee is using raw feed, hence a raw socket protocol
+import socket                                                   # Wifi Xbee is using raw feed, hence a raw socket protocol
 
 connect_to_xbee = True
 
 if connect_to_xbee == True:
     # Network initiation
-    ip='192.168.178.215'               #Enter IP of your Xbee
-    p=9750                             #Enter the port number for your Xbee
-    s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)  #Initialize socket object
-    s.connect((ip,p))                         #Connect to the Xbee
+    ip='192.168.XXX.YYY'                                        # Enter IP of your Xbee
+    p=9750                                                      # Enter the port number for your Xbee
+    s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)          # Initialize socket object
+    s.connect((ip,p))                                           # Connect to the Xbee
     print("Connected to: ", ip, " ", p)
 
 
-confidence_threshold = 0.60                                      # default in Edge Impulse is 0.6
+confidence_threshold = 0.60                                     # default in Edge Impulse is 0.6
 
 
 def move(dir):
@@ -29,10 +29,9 @@ def move(dir):
     elif dir == "-":
         control = "2"
     
-    # print(control)
     if connect_to_xbee == True:
-        s.send(control.encode())
-        s.send(dir.encode())
+        s.send(control.encode())                                # sending control code to xBee...
+        s.send(dir.encode())                                    # ...and direction
 
 
 def features(raw_data):
@@ -40,11 +39,7 @@ def features(raw_data):
     implementation_version = 4 # 4 is latest versions
     draw_graphs = False # For testing from script, disable graphing to improve speed
 
-    # raw_data = ""
-    # raw_data = np.array([float(item.strip()) for item in raw_data.split(',')])
     raw_data = np.array(raw_data)
-    # print("Amount of features: ", len(raw_data))
-    # print(raw_data)
 
     axes = ['TP9', 'AF7', 'AF8', 'TP10'] # Axes names.  Can be any labels, but the length naturally must match the number of channels in raw data
     sampling_freq = 250 # Sampling frequency of the data.  Ignored for images
@@ -80,26 +75,7 @@ def features(raw_data):
                         spectral_peaks_threshold, spectral_power_edges, do_log, do_fft_overlap,
                         wavelet_level, wavelet, extra_low_freq)
 
-    # Return dictionary, as defined in code
-        # return {
-        #     'features': List of output features
-        #     'graphs': Dictionary of graphs
-        #     'labels': Names of the features
-        #     'fft_used': Array showing which FFT sizes were used.  Helpful for optimzing embedded DSP code
-        #     'output_config': information useful for correctly configuring the learn block in Studio
-        # }
 
-    # print (output)
-    # print(f'Processed features are: ')
-    # print('Feature name, value')
-    # idx = 0
-    # for axis in axes:
-    # #    print(f'\nFeatures for axis: {axis}')
-    #     for label in output['labels']:
-    # #        print(f'{label: <40}: {output["features"][idx]}')
-    #         print(f'{output["features"][idx]}')
-    #         idx += 1
-    # print (output["features"])
     return output["features"]
 
 
@@ -127,14 +103,13 @@ while True:
 
     for iter in range (nr_samples):
         all_samples = []
-        for i in range (2000 // 4):
+        for i in range (2000 // 4):                                                 # 2000 ms = 2 secs, 4 EEG-electrodes (channels)
             sample, timestamp = inlet.pull_sample()
             sample.pop()
             all_samples.append(sample)
 
         all_samples = flatten(all_samples)                                          # ...and flattening them
         all_samples = features(all_samples)
-        # print(all_samples)
 
         input_samples = np.array(all_samples, dtype=np.float32)
         input_samples = np.expand_dims(input_samples, axis=0)
@@ -143,39 +118,18 @@ while True:
         interpreter.invoke()                                                        # run the inference
 
         output_data = interpreter.get_tensor(output_details[0]['index'])            # output_details[0]['index'] = the index which provides the input
-        # print(output_data)
-        # print(f"Inference output: {output_data[0][1]:.3f} {output_data[0][0]:.3f} {output_data[0][2]:.3f}")
-
 
         background  = output_data[0][0]
-        deep        = output_data[0][1]
-        shallow     = output_data[0][2]
+        right       = output_data[0][1]
+        left        = output_data[0][2]
 
-        if shallow >= confidence_threshold:
+        if left >= confidence_threshold:
             move("L")
-        elif deep >= confidence_threshold:
+        elif right >= confidence_threshold:
             move("R")
         else:
             move("-")
 
-
-        # background  = output_data[0][0]
-        # blink       = output_data[0][1]
-        # left        = output_data[0][2]
-        # right       = output_data[0][3]
-
-        # if left >= confidence_threshold:
-        #     left_nr += 1
-        # elif right >= confidence_threshold:
-        #     right_nr += 1
-        # elif background >= confidence_threshold:
-        #     back_nr += 1
-        # elif blink >= confidence_threshold:
-        #     blink_nr += 1
-        # else:
-        #     uncertain_nr += 1
-    
-#    print(f"L: {left_nr:.4f}  B: {back_nr:.4f}  R: {right_nr:.4f}  Uncertain: {uncertain_nr:.4f}   Sum: {left_nr+right_nr+back_nr:.1f}")       
-#    print(f"Deep: {deep:.8f}  Background: {background:.8f}  Shallow: {shallow:.8f}")       
-    print(f"Left: {shallow:.8f}  Background: {background:.8f}  Right: {deep:.8f}")       
+     
+    print(f"Left: {left:.8f}  Background: {background:.8f}  Right: {right:.8f}")       
  
