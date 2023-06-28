@@ -37,38 +37,38 @@ def move(dir):
 def features(raw_data):
 
     implementation_version = 4 # 4 is latest versions
-    draw_graphs = False # For testing from script, disable graphing to improve speed
+    draw_graphs = False                                         # For testing from script, disable graphing to improve speed
 
     raw_data = np.array(raw_data)
 
-    axes = ['TP9', 'AF7', 'AF8', 'TP10'] # Axes names.  Can be any labels, but the length naturally must match the number of channels in raw data
-    sampling_freq = 250 # Sampling frequency of the data.  Ignored for images
+    axes = ['TP9', 'AF7', 'AF8', 'TP10']                        # Axes names.  Can be any labels, but the length naturally must match the number of channels in raw data
+    sampling_freq = 250                                         # Sampling frequency of the data.  Ignored for images
 
     # Below here are parameters that are specific to the spectral analysis DSP block. These are set to the defaults
-    scale_axes = 1 # Scale your data if desired
-    input_decimation_ratio = 1 # Decimation ratio.  See /spectral_analysis/paramters.json:31 for valid ratios
-    filter_type = 'none' # Filter type.  String : low, high, or none
-    filter_cutoff = 0 # Cutoff frequency if filtering is chosen.  Ignored if filter_type is 'none'
-    filter_order = 0 # Filter order.  Ignored if filter_type is 'none'.  2, 4, 6, or 8 is valid otherwise
-    analysis_type = 'FFT' # Analysis type.  String : FFT, wavelet
+    scale_axes = 1                                              # Scale your data if desired
+    input_decimation_ratio = 1                                  # Decimation ratio.  See /spectral_analysis/paramters.json:31 for valid ratios
+    filter_type = 'none'                                        # Filter type.  String : low, high, or none
+    filter_cutoff = 0                                           # Cutoff frequency if filtering is chosen.  Ignored if filter_type is 'none'
+    filter_order = 0                                            # Filter order.  Ignored if filter_type is 'none'.  2, 4, 6, or 8 is valid otherwise
+    analysis_type = 'FFT'                                       # Analysis type.  String : FFT, wavelet
 
     # The following parameters only apply to FFT analysis type.  Even if you choose wavelet analysis, these parameters still need dummy values
-    fft_length = 64 # Size of FFT to perform.  Should be power of 2 >-= 16 and <= 4096
+    fft_length = 64                                             # Size of FFT to perform.  Should be power of 2 >-= 16 and <= 4096
 
     # Deprecated parameters.  Only applies to version 1, maintained for backwards compatibility
-    spectral_peaks_count = 0 # Deprecated parameter.  Only applies to version 1, maintained for backwards compatibility
-    spectral_peaks_threshold = 0 # Deprecated parameter.  Only applies to version 1, maintained for backwards compatibility
-    spectral_power_edges = "0" # Deprecated parameter.  Only applies to version 1, maintained for backwards compatibility
+    spectral_peaks_count = 0                                    # Deprecated parameter.  Only applies to version 1, maintained for backwards compatibility
+    spectral_peaks_threshold = 0                                # Deprecated parameter.  Only applies to version 1, maintained for backwards compatibility
+    spectral_power_edges = "0"                                  # Deprecated parameter.  Only applies to version 1, maintained for backwards compatibility
 
     # Current FFT parameters
-    do_log = True # Take the log of the spectral powers from the FFT frames
-    do_fft_overlap = True # Overlap FFT frames by 50%.  If false, no overlap
-    extra_low_freq = False # This will decimate the input window by 10 and perform another FFT on the decimated window.
-                        # This is useful to extract low frequency data.  The features will be appended to the normal FFT features
+    do_log = True                                               # Take the log of the spectral powers from the FFT frames
+    do_fft_overlap = True                                       # Overlap FFT frames by 50%.  If false, no overlap
+    extra_low_freq = False                                      # This will decimate the input window by 10 and perform another FFT on the decimated window.
+                                                                # This is useful to extract low frequency data.  The features will be appended to the normal FFT features
 
     # These parameters only apply to Wavelet analysis type.  Even if you choose FFT analysis, these parameters still need dummy values
-    wavelet_level = 2 # Level of wavelet decomposition
-    wavelet = "rbio3.1" # Wavelet kernel to use
+    wavelet_level = 2                                           # Level of wavelet decomposition
+    wavelet = "rbio3.1"                                         # Wavelet kernel to use
 
     output = dsp.generate_features(implementation_version, draw_graphs, raw_data, axes, sampling_freq, scale_axes, input_decimation_ratio,
                         filter_type, filter_cutoff, filter_order, analysis_type, fft_length, spectral_peaks_count,
@@ -92,7 +92,7 @@ print()
 print(output_details)
 
 # Connect to the LSL stream
-streams = resolve_stream('type', 'EEG') # create a new inlet to read # from the stream
+streams = resolve_stream('type', 'EEG')                         # create a new inlet to read # from the stream
 inlet = pylsl.stream_inlet(streams[0])
 
 nr_samples = 1

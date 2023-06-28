@@ -1,5 +1,16 @@
 /*
   Using EEG to control a Parallax ActivityBot through xBee
+  This code is for the receiver side
+  The Ping sonar sensor is only used to measure if the bot is too close to a hinder, in that case the bot will reverse
+  
+  The only requirements from the sender side is to first send a control code "0", "1", or "2"
+  and then the direction: "L" = Left, "R" = Right, "-" = forward. Thus 0L = Left, 1R = Right, 2- = forward
+  
+  I've used both an iPad & TecbBasic as well as Python on the sender side, more or less anything WiFi-equipped can be used.
+  
+  The init_xbee function needs to be configured for your own WiFi-router
+  
+  Thomas Vikström 2023
 */
 
 #include "simpletools.h"
@@ -23,11 +34,11 @@ int xbcmd(char *cmd, char *reply, int bytesMax, int msMax);
 
 
 int main() {
-  int x, y = 127;  //was y = 127
+  int x, y = 127;  
   int distHI, distLO;
   int tx_result, receiving;
 
-  init_xbee();  // Initialises the XBee
+  init_xbee();                  // Initialises the XBee
 
   servo_angle(pingservo, 950);  // Initialising Ping-servo to XXX degrees
   pause(1000);
@@ -39,7 +50,7 @@ int main() {
 
   while (1) {
 
-    drive_setRampStep(5);  // 5 ticks/sec / 20 ms
+    drive_setRampStep(5);       // 5 ticks/sec / 20 ms
 
     if (dist >= 255) {
       distHI = dist - 255;
