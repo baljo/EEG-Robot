@@ -54,6 +54,23 @@ In this project I started with the aim of collecting data mainly stemming from t
 
 ![](/Images/EI-02.jpg)
 
+But as sometimes also happened with the previous two EEG-projects, I found the accuracy in real life to be only satisfactorial, and especially inconsistent with sometimes a very good repeatability, sometimes nothing worked at all. While the reasons for this inconsistent behaviour are not completely clear to me, I later discovered that the place where I usually tested (favorite sofa corner), is affected by electric and/or radio interference. Depended on how I sat, the interference could vary between almost nothing, to a small 'hurricane'. With the previous two projects I used the MindMonitor mobile phone app to secure good signal quality, but as the phone was taken out of the setup in this third project I did at first not think about checking the signal quality. I also believe the MindMonitor app is filtering out some of the interference before compiling the data, so with hindsight this is something I should have thought to do in the Python code. Best is of course to try to minimize external interference by going outdoors...while still using Wi-Fi.
+
+With the above mentioned inconsistencies, I decided to simplify the approach and go back to using eye blinks as they create significant and also visible peaks in the EEG-data. Thus I started to record 30 seconds of data chunks when blinking normally (approx. once per 2 seconds), and similarly when blinking 'harder', almost squeezing my eyes. The normal blinks I labeled 'shallow', the hard blinks 'deep'. Additionally I recorded data when not blinking at all, this serves as a background class. Initially I also recorded data with 'double blinks', i.e. two consecutive blinks, with the aim of using them to signal the robot to stop moving. As it though was difficult to secure that both blinks fitted in same 2 second window, I scrapped that idea.
+
+### Record Data
+
+Connect your Muse device to your computer, start BlueMuse, and use this MuseLSL command from a command prompt:
+- muselsl record --duration 60
+    - This records EEG-data to a CSV-file, in this case for 60 seconds.
+    - During this time you should try to blink approximately once per two seconds, as long as you collect many minutes of data in total, it's not a big deal if you blink a bit more frequent. It's anyhow better to sometimes have two blinks in the same 2 second window instead of having none at all, as the latter might be confused with the background class where you are not supposed to blink at all.
+- Rename the CSV-files to e.g. `left.<original file name>.csv` for the 'shallow' blinks, `right.<original file name>.csv` for the 'deep' blinks, and `background.<original file name>.csv` for the background class without blinks.
+
+### Upload to Edge Impulse
+
+Use Edge Impulse's CSV Wizard to configure the CSV-file import. This wizard walks you through the process by using one of your recorded files as an example, so it's very easy and straightforward to use. As mentioned before, I've myself used samples of 2 seconds each, and blinked accordingly, but feel free to experiment with smaller or larger samples. Keep in mind though that the larger the sample window is, the longer it will take before the intended action (turn left or right) is taken.
+
+![](Images/EI-05.jpg)
 
 ## Training and Building the Model
 ## Model Deployment
