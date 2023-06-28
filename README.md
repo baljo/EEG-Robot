@@ -36,7 +36,7 @@ Please note that the components I've used are several years old, and have been r
 
 ### Software Configuration
 
-- The robot is in this project programmed using [SimpleIDE](https://learn.parallax.com/tutorials/language/propeller-c/propeller-c-set-simpleide) which is an open source programming tool for Propeller C. SimpleIDE is no longer maintained since 2018, but was still possible to install and use on Win10 when this tutorial was written (June 2023).
+- The robot is in this project programmed using [SimpleIDE](https://learn.parallax.com/tutorials/language/propeller-c/propeller-c-set-simpleide) which is an open source programming tool for Propeller C. SimpleIDE is since 2018 no longer maintained, but was still possible to install and use on Win10 when this tutorial was written (June 2023).
     - You can also use any other language that the Propeller processor family supports as long as you find libraries for the Wi-Fi and distance sensor modules
     - The program controlling the robot in this project is by purpose very simple, it is just receiving a control code and a direction code (2 bytes) through Wi-Fi and taking actions on the direction code. This makes it easy to adjust for other brands or other type of robots.
     - Using SimpleIDE, compile and upload [this program](https://github.com/baljo/EEG-Robot/blob/main/Code/EEG-Robot%20-%20receiver%20side.c) to the robot
@@ -45,6 +45,12 @@ Please note that the components I've used are several years old, and have been r
     - Python 3.x, I've used v3.11
         - install following Python libraries: tensorflow, muselsl (only used when recording data), pylsl, numpy, nltk, socket, spectral_analysis (this is found from [Edge Impulse GitHub](https://github.com/edgeimpulse/processing-blocks/tree/master/spectral_analysis))
         - download the [Python-program](https://github.com/baljo/EEG-Robot/blob/main/Code/EEG-robot.py) communicating with the EEG-device and with the robot
+        - around row 13 you'll find the configuration for your XBee IP-address, change this to what your robot's Wi-Fi device is using
+            ```
+                # Network initiation
+                ip='192.168.XXX.YYY'          # Enter IP of your Xbee
+                p=9750                        # Enter the port number for your Xbee
+            ```
     - BlueMuse or other software able to stream data from Muse EEG headsets via LSL (Lab Streaming Layer)
 
 
@@ -65,17 +71,73 @@ Connect your Muse device to your computer, start BlueMuse, and use this MuseLSL 
     - This records EEG-data to a CSV-file, in this case for 60 seconds.
     - During this time you should try to blink approximately once per two seconds, as long as you collect many minutes of data in total, it's not a big deal if you blink a bit more frequent. It's anyhow better to sometimes have two blinks in the same 2 second window instead of having none at all, as the latter might be confused with the background class where you are not supposed to blink at all.
 - Rename the CSV-files to e.g. `left.<original file name>.csv` for the 'shallow' blinks, `right.<original file name>.csv` for the 'deep' blinks, and `background.<original file name>.csv` for the background class without blinks.
+- Start with a smaller amount of data, a minute or so per class, and after you've trained the model add more data. In this project I have only 6 minutes of data, but if I would strive for perfection I'd double or triple this amount.
 
 ### Upload to Edge Impulse
 
-Use Edge Impulse's CSV Wizard to configure the CSV-file import. This wizard walks you through the process by using one of your recorded files as an example, so it's very easy and straightforward to use. As mentioned before, I've myself used samples of 2 seconds each, and blinked accordingly, but feel free to experiment with smaller or larger samples. Keep in mind though that the larger the sample window is, the longer it will take before the intended action (turn left or right) is taken.
+Use Edge Impulse's CSV Wizard to configure the CSV-file import. This wizard walks you through the process by using one of your recorded files as an example, so it's very easy and straightforward to use. As mentioned before, I've myself used samples of 2 seconds each, and blinked accordingly, but feel free to experiment with smaller or larger samples. Keep in mind though that the larger the sample window is, the longer it will take before the intended action (turn left or right) is taken. You probably don't want to wait 10 seconds after you've asked the robot to turn left before it finally turns!
 
 ![](Images/EI-05.jpg)
 
 ## Training and Building the Model
+
+### Creating an Impulse
+
+Again, this is quite straightforward in Edge Impulse, you need to create an impulse by selecting a few parameters. In this project I experimented with a few alternatives, with and without sliding windows, but found out that a sample window of 2 seconds, using Spectral Analysis as processing block, and Classification as learning block was optimal. As there are in practice no memory or latency constraints when using a computer compared to using a microcontroller, there's no need to try to optimize memory usage or processing time.
+
+![](Images/EI-08.jpg)
+
+### Configuring Spectral Features
+
+Following configuration is what I found to be optimal for this use case. Whenever you change any of these, do remember to change same setting in the Python-program as well.
+- Click on `Save parameters` and in next screen `Generate features`.
+
+![](Images/EI-10.jpg)
+
+### Training the Model
+
+After some experimentation I found an optimal Neural network settings to be 2 dense layers of 20 and 40 neurons each, with a dropout rate of 0.25 to reduce the risk of overfitting the model exactly to the underlying data. As a computer later will run inferencing, there's no need to create an Int8 quantized model. As the results show, the training performance in this case is 100 %.
+
+![](Images/EI-13.jpg)
+
+### Testing the Model
+
+Before deploying the model to the target device, it is strongly recommended that you test it with data it has not seen before. This is where you use the `Model testing` functionality in Edge Impulse. For this purpose Edge Impulse puts by default approximately 20 % of the data aside. Just click on `Classify all` to start the testing.
+
+In this project the test results were quite good with an accuracy of 88 %, so I decided this was good enough to start testing the model in practice. If this were a project to be deployed to end users, the accuracy would probably need to be much higher.   
+
+![](Images/EI-15.jpg)
+
 ## Model Deployment
+
+First part is in this case extremely simple, just head over to `Dashboard` and download the `TensorFlow Lite (float32)` model. This model file should be copied to same directory as where the Python-program is.
+
+![](Images/EI-17.jpg)
+
+Second part is to check the Python-program (EEG-robot.py) and secure you have correct configuration:
+- Around row 82 you'll find the below code, change the model_path to the exact name of the file you just downloaded
+    ```
+    # Load the TensorFlow Lite model
+    model_path = "ei-muse-eeg-robot-blinks-classifier-tensorflow-lite-float32-model (1).lite"
+    ```
+- Start the robot, the first time without providing power to the wheel servos, once you have established communication you can provide power to the servos.
+- Run the Python program, as this project is all about controlling an external robot, there's no fancy UI. What though will be shown in the terminal window is the result of the inference, i.e. left, right, or background. Remember, left is a 'normal' blink, right is a 'deep' blink, and background is no blinks at all (= the robot moves straight forward).
+- If everything works as it should (which it sometimes does even the first time), you can now control your robot by blinking!
+    - As there are several devices, programs, libraries etc. involved, there's of course a risk that you'll end up having problems, mainly with device communication or with the model accuracy. As this is neither rocket science or brain surgery, just troubleshoot each issue methodically,    
+
+
 ## Results
+
+The results from this project were initially a bit disappointing due to the inconsistencies I could not understand the reasons for. As mentioned earlier I needed to lower my ambition level and use blinks instead of hand movement tries. Still, even then the accuracy was sometimes unexpectedly low. First when I discovered that one major culprit was interference, and I found an exact sweet spot where to sit, I was able to achieve good results in a real setting. Now I believe that my initial goal might be easier to achieve when I know how to reduce interference.
+
+When trying to control a physical robot, you most probably want to look what it's doing or where it's going. This action, i.e. watching the robot, was though in my case a bit different than when collecting blinks where I only focused my eyes on the computer screen. In practice I noticed that this difference caused some misclassifications when I sat on the floor and watched the robot. A lesson learned from this is to record blinks in different settings and positions to improve the accuracy. Still, the accuracy was good enough so I could control the robot to give me a well deserved cold beverage!
+
 ## Conclusion
+
+The goal of this tutorial was to show how to control a mobile robot using brain waves, and despite the few pitfalls on the road, the goal was achieved. To scale up from this proof of concept level, one would need to take measures to minimize or mitigate electric and radio interference, physically and/or by filtering it out in the software. The physical device being controlled, in this case a mobile robot, also needs to have fail-safe modes so it does not harm others or itself. I actually tried to implement logic on the robot so it would stop if the communication was interupted for a few seconds, but I was not able to get it working reliably. In addition, it would be nice to have a few more commands available, e.g. double-blinking for stopping or starting the robot, triple-blinking for reversing etc. Technically this is quite easy, the major work needs to be done in designing the ML-model and collecting data.
+
+This ends - at least for now - the tutorial series of applying machine learning to EEG-data. While not everything has gone according to initial plans, there has been way more successes than failures. Most satisfying was everything I've learned on the way, and most surprising learning that this concept is even possible with a consumer EEG-device! Luckily I did not listen to one professor telling me it is probably not possible with this type of EEG-device.
+
 
 Intro / Overview
 Briefly provide an introduction to your project. Address the following: what you are accomplishing, what the intended outcome is, highlight the use-case, describe the reasons for undertaking this project, and give a high level overview of the build. Provide a sentence or two for each of these aspects.  
