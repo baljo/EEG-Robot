@@ -1,7 +1,13 @@
 # Applying EEG Data to Machine Learning, Part 3
 
 ## Intro
+
+This third and final tutorial in the series about Machine Learning (ML) and EEG-data, walks through how you can control a small mobile robot purely with your brain waves! While this is a stand-alone tutorial, it is still recommended you check [Part 1](https://docs.edgeimpulse.com/experts/prototype-and-concept-projects/eeg-data-machine-learning-part-1) and [Part 2](https://docs.edgeimpulse.com/experts/prototype-and-concept-projects/eeg-data-machine-learning-part-2) for background information.
+
 ## Problem Being Solved / Use-case Explanation
+
+The previous two tutorials showed how you, using EEG-data from a consumer EEG-device, can play simple games or use a computer to communicate with the outer world. This tutorial takes it one step further, showing how you can control a small mobile robot, again by the small electric signals your brain emits. 
+
 ## Components and Hardware Configuration
 ## Data Collection Process
 ## Training and Building the Model
