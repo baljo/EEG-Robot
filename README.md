@@ -6,10 +6,55 @@ This third and final tutorial in the series about Machine Learning (ML) and EEG-
 
 ## Problem Being Solved / Use-case Explanation
 
-The previous two tutorials showed how you, using EEG-data from a consumer EEG-device, can play simple games or use a computer to communicate with the outer world. This tutorial takes it one step further, showing how you can control a small mobile robot, again by the small electric signals your brain emits. 
+The previous two tutorials showed how you, using EEG-data from a consumer EEG-device, can play simple games or use a computer to communicate with the outer world. This tutorial takes it one step further, showing how you can control a small mobile robot, again by the small electric signals your brain emits. Possible users for this type of solution might be people having none or only limited capabilities to move their limbs (but still have "normal" brain functionality), to control physical devices such as wheelchairs, doors, window blinders, televisions etc. In the video this technology is simply used to bring a cold drink to me.
 
-## Components and Hardware Configuration
+Previously I used a setup with several devices involved: `EEG-device ==> Mobile Phone (MindMonitor/PythonOSC) ==> Wi-Fi ==> Computer`, and while it as such worked well enough, I discovered that using same concept when introducing yet an additional device (appending `==> Wi-Fi ==> Mobile Robot` in the equation) caused more latency. In practice this resulted in undesirable delays between the desired action and the same action performed. E.g., when trying to turn the robot left, the left turn sometimes happened unacceptable late, and it was difficult to understand if it was a misinterpration of the EEG-data, or something else. 
+
+Due to this behavior, and that I wanted to simplify the setup, I explored if it was possible to get rid of the phone in the equation, thus having this setup `EEG-device ==> Computer ==>  Wi-Fi ==> Mobile Robot`. The phone though used MindMonitor and  PythonOSC to communicate with the computer, but also automatically reduced the raw data to spectral bands, so I had to find a way to replace both the technical communication as well as the spectral functionality. The communication challenge got solved by using the Lab Streaming Layer (LSL) protocol, and the spectral challenge by Edge Impulse helping me to use their Python-code for extracting spectral features. Through this I was successful in removing the phone and getting almost no extra delays at all!
+
+The hardware used in this project was a Parallax ActivityBot, equipped with XBee Wi-Fi and a Parallax Ping))) Ultrasonic distance sensor. While more or less any Wi-Fi equipped robot - mobile or not - can be used, I've found the Parallax product line to be very reliable and easy to work with. The microcontroller on the robot is a Propeller P1 processor with 8 separate cores and a shared RAM-memory, which is more than enough for this quite simple use case.   
+
+
+
+## Components and Hardware/Software Configuration
+
+### Components Needed
+
+- [Interaxon Muse EEG-device](https://choosemuse.com/pages/shop), any "recent" model, my device is from 2018
+- [Parallax Activitybot kit](https://www.parallax.com/product/activitybot-360-robot-kit/)
+- [PING))) Ultrasonic Distance Sensor](https://www.parallax.com/product/ping-ultrasonic-distance-sensor/) or [LaserPING 2m Rangefinder](https://www.parallax.com/product/laserping-2m-rangefinder/)
+    - note: the distance sensor is not strictly needed for this project, it is only used to reverse the robot in case it comes too close to a hinder, but I still recommend to have a distance sensor for other robot projects
+- [Parallax WX ESP8266 WiFi Module – DIP](https://www.parallax.com/product/parallax-wx-esp8266-wifi-module-dip/)
+- Computer: Windows, Mac, Linux, even a Raspberry Pi might work. Only tested on Windows 10.
+
+Please note that the components I've used are several years old, and have been replaced with the newer versions linked above. Due to this there's a possibility you'll have to adjust some of the configuration settings, this is of course even more applicable if you use any other brand than Parallax.
+
+### Hardware Configuration
+
+- Assemble the robot, possible distance sensor, and Wi-Fi module according to the instructions distributed py Parallax
+- Before trying to replicate this project, familiarize yourself with the robot and how to program it. An excellent starting point is the [Parallax educational site](https://learn.parallax.com/).
+
+### Software Configuration
+
+- The robot is in this project programmed using [SimpleIDE](https://learn.parallax.com/tutorials/language/propeller-c/propeller-c-set-simpleide) which is an open source programming tool for Propeller C. SimpleIDE is no longer maintained since 2018, but was still possible to install and use on Win10 when this tutorial was written (June 2023).
+    - You can also use any other language that the Propeller processor family supports as long as you find libraries for the Wi-Fi and distance sensor modules
+    - The program controlling the robot in this project is by purpose very simple, it is just receiving a control code and a direction code (2 bytes) through Wi-Fi and taking actions on the direction code. This makes it easy to adjust for other brands or other type of robots.
+    - Using SimpleIDE, compile and upload [this program](https://github.com/baljo/EEG-Robot/blob/main/Code/EEG-Robot%20-%20receiver%20side.c) to the robot
+        - You'll need to match pin and Wi-Fi settings with your own setup, check the code for pointers
+- Computer
+    - Python 3.x, I've used v3.11
+        - install following Python libraries: tensorflow, muselsl (only used when recording data), pylsl, numpy, nltk, socket, spectral_analysis (this is found from [Edge Impulse GitHub](https://github.com/edgeimpulse/processing-blocks/tree/master/spectral_analysis))
+        - download the [Python-program](https://github.com/baljo/EEG-Robot/blob/main/Code/EEG-robot.py) communicating with the EEG-device and with the robot
+    - BlueMuse or other software able to stream data from Muse EEG headsets via LSL (Lab Streaming Layer)
+
+
 ## Data Collection Process
+
+In this project I started with the aim of collecting data mainly stemming from the motor cortex in our brains. Thus I collected data when **trying** to move my left hand, when **trying** to move my right hand, and when relaxing. I did though not move any limbs at all, neither did I blink, thus simulating I was paralyzed. I got an accuracy of 88 % as testing result in Edge Impulse, which for this type of project is surprisingly good. 
+
+![](/Images/EI-02.jpg)
+
+
 ## Training and Building the Model
 ## Model Deployment
 ## Results
