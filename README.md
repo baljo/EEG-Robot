@@ -4,7 +4,9 @@
 
 This third and final tutorial in the series about Machine Learning (ML) and EEG-data, walks through how you can control a small mobile robot purely with your brain waves! While this is a stand-alone tutorial, it is still recommended you check [Part 1](https://docs.edgeimpulse.com/experts/prototype-and-concept-projects/eeg-data-machine-learning-part-1) and [Part 2](https://docs.edgeimpulse.com/experts/prototype-and-concept-projects/eeg-data-machine-learning-part-2) for background information.
 
-## Problem Being Solved / Use-case Explanation
+![](/Images/IMG_3329_3.jpg)
+
+## Use-case Explanation
 
 The previous two tutorials showed how you, using EEG-data from a consumer EEG-device, can play simple games or use a computer to communicate with the outer world. This tutorial takes it one step further, showing how you can control a small mobile robot, again by the small electric signals your brain emits. Possible users for this type of solution might be people having none or only limited capabilities to move their limbs (but still have "normal" brain functionality), to control physical devices such as wheelchairs, doors, window blinders, televisions etc. In the video this technology is simply used to bring a cold drink to me.
 
@@ -28,6 +30,9 @@ The hardware used in this project was a Parallax ActivityBot, equipped with XBee
 - Computer: Windows, Mac, Linux, even a Raspberry Pi might work. Only tested on Windows 10.
 
 Please note that the components I've used are several years old, and have been replaced with the newer versions linked above. Due to this there's a possibility you'll have to adjust some of the configuration settings, this is of course even more applicable if you use any other brand than Parallax.
+
+
+![](/Images/IMG_3338_3.jpg)
 
 ### Hardware Configuration
 
@@ -58,7 +63,7 @@ Please note that the components I've used are several years old, and have been r
 
 In this project I started with the aim of collecting data mainly stemming from the motor cortex in our brains. Thus I collected data when **trying** to move my left hand, when **trying** to move my right hand, and when relaxing. I did though not move any limbs at all, neither did I blink, thus simulating I was paralyzed. I got an accuracy of 88 % as testing result in Edge Impulse, which for this type of project is surprisingly good. 
 
-![](/Images/EI-02.jpg)
+![](/Images/EI-02_2.jpg)
 
 But as sometimes also happened with the previous two EEG-projects, I found the accuracy in real life to be only satisfactorial, and especially inconsistent with sometimes a very good repeatability, sometimes nothing worked at all. While the reasons for this inconsistent behaviour are not completely clear to me, I later discovered that the place where I usually tested (favorite sofa corner), is affected by electric and/or radio interference. Depended on how I sat, the interference could vary between almost nothing, to a small 'hurricane'. With the previous two projects I used the MindMonitor mobile phone app to secure good signal quality, but as the phone was taken out of the setup in this third project I did at first not think about checking the signal quality. I also believe the MindMonitor app is filtering out some of the interference before compiling the data, so with hindsight this is something I should have thought to do in the Python code. Best is of course to try to minimize external interference by going outdoors...while still using Wi-Fi.
 
@@ -73,11 +78,25 @@ Connect your Muse device to your computer, start BlueMuse, and use this MuseLSL 
 - Rename the CSV-files to e.g. `left.<original file name>.csv` for the 'shallow' blinks, `right.<original file name>.csv` for the 'deep' blinks, and `background.<original file name>.csv` for the background class without blinks.
 - Start with a smaller amount of data, a minute or so per class, and after you've trained the model add more data. In this project I have only 6 minutes of data, but if I would strive for perfection I'd double or triple this amount.
 
+#### Deep Eye Blinks
+
+![](/Images/EI-20_2.jpg)
+
+
+#### Normal Eye Blinks
+
+![](/Images/EI-22_2.jpg)
+
+#### Background Noise (no blinks) 
+
+![](/Images/EI-24_2.jpg)
+
+
 ### Upload to Edge Impulse
 
 Use Edge Impulse's CSV Wizard to configure the CSV-file import. This wizard walks you through the process by using one of your recorded files as an example, so it's very easy and straightforward to use. As mentioned before, I've myself used samples of 2 seconds each, and blinked accordingly, but feel free to experiment with smaller or larger samples. Keep in mind though that the larger the sample window is, the longer it will take before the intended action (turn left or right) is taken. You probably don't want to wait 10 seconds after you've asked the robot to turn left before it finally turns!
 
-![](Images/EI-05.jpg)
+![](Images/EI-05_2.jpg)
 
 ## Training and Building the Model
 
@@ -131,6 +150,8 @@ Second part is to check the Python-program (EEG-robot.py) and secure you have co
 The results from this project were initially a bit disappointing due to the inconsistencies I could not understand the reasons for. As mentioned earlier I needed to lower my ambition level and use blinks instead of hand movement tries. Still, even then the accuracy was sometimes unexpectedly low. First when I discovered that one major culprit was interference, and I found an exact sweet spot where to sit, I was able to achieve good results in a real setting. Now I believe that my initial goal might be easier to achieve when I know how to reduce interference.
 
 When trying to control a physical robot, you most probably want to look what it's doing or where it's going. This action, i.e. watching the robot, was though in my case a bit different than when collecting blinks where I only focused my eyes on the computer screen. In practice I noticed that this difference caused some misclassifications when I sat on the floor and watched the robot. A lesson learned from this is to record blinks in different settings and positions to improve the accuracy. Still, the accuracy was good enough so I could control the robot to give me a well deserved cold beverage!
+
+![](/Images/Video.gif)
 
 ## Conclusion
 
